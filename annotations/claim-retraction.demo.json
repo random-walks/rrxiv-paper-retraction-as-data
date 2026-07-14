@@ -1,0 +1,17 @@
+{
+  "target_id": "rrxiv:2605.00007:claim:c7",
+  "target_type": "claim",
+  "annotation_type": "claim_retraction",
+  "content": "Author retraction of claim c7, as designed. c7 states the status-quo position ('a paper-level retraction flag is an adequate substitute for claim-level retraction annotations') that the paper itself refutes: the projection from claim-level annotations to a paper-level bit is a one-way information loss (see c5 and the surrounding discussion). The claim was included in v4 deliberately so the paper exercises its own proposal end to end via the RRP-0020 author fast path. This is a live demonstration, not a correction: c1-c6 are unaffected, which is itself an in-vivo instance of the survivor-claim situation measured by c2. Prepared alongside the v4 revision (branch feat/v4-protocol-enrichment); to be posted to the canonical instance by the paper's authors after the v4 submission lands, since c7 does not exist on the deployed v3.",
+  "structured_payload": {
+    "reason": "withdrawn_by_author",
+    "explanation": "Deliberate retraction-as-demonstration: c7 was written to be superseded by the paper's own c5 argument. See Section 'Claim 7: a live retraction demonstration' in the v4 paper.",
+    "superseded_by_claim": "rrxiv:2605.00007:claim:c5",
+    "recommended_action": "use_superseded_by"
+  },
+  "created_at": "2026-07-14T00:00:00Z",
+  "created_by": {
+    "identity_type": "orcid",
+    "identity": "0009-0002-0561-6499"
+  }
+}
