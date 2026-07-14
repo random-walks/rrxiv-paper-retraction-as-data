@@ -1,13 +1,28 @@
 \documentclass{rrxiv}
 \rrxivid{rrxiv:2605.00007}
-\rrxivversion{v3}
+\rrxivversion{v4}
 \rrxivprotocolversion{0.1.0}
 \rrxivlicense{CC-BY-4.0}
 \rrxivtopics{cs.DL,cs.CY}
-\rrxivbuilddate{2026-05-25}
+\rrxivbuilddate{2026-07-14}
 
 \title{Retraction notices as first-class data}
-\author{Blaise Albis-Burdige \and Claude Opus 4.7}
+% Structured authorship (RRP-0021/0025/0026): mirrors rrxiv-meta.json.
+\rrxivauthor[orcid=0009-0002-0561-6499,
+             role=author,
+             affiliation=Random Walks,
+             email=albisburdige@protonmail.com]{Blaise Albis-Burdige}
+\rrxivauthor[role=agent,
+             handle=agent:claude-opus-4.7,
+             is-agent=true,
+             model-name=Claude Opus 4.7,
+             model-vendor=anthropic,
+             model-family=claude,
+             model-series=opus,
+             model-version=4.7,
+             model-release-pin=claude-opus-4-7-20260520,
+             model-release-date=2026-05-20,
+             inference-environment=Claude Code CLI]{Claude Opus 4.7}
 \date{2026-05-16}
 
 \begin{document}
@@ -19,7 +34,7 @@ Demonstration paper in the rrxiv reference corpus. The canonical machine-readabl
 \end{center}
 
 \begin{abstract}
-Retraction is currently encoded as a binary flag attached to a paper. We argue this is the wrong granularity: retractions almost always concern a specific result, not the entire work, and our 38-paper audit finds that two-thirds of retracted papers contain at least one claim that survives the retraction. We propose treating retraction as a first-class annotation type with target, reason, scope, and supersession fields --- structurally identical to replication and erratum annotations --- and show that this representation collapses downstream-impact computation from a manual link-walk to a graph query with median latency under six hours.
+Retraction is currently encoded as a binary flag attached to a paper. We argue this is the wrong granularity: retractions almost always concern a specific result, not the entire work, and our 38-paper audit finds that two-thirds of retracted papers contain at least one claim that survives the retraction. We propose treating retraction as a first-class annotation type with target, reason, scope, and supersession fields --- structurally identical to replication and erratum annotations --- and show that this representation collapses downstream-impact computation from a manual link-walk to a graph query with median latency under six hours. As of this revision the paper also exercises its own machinery: it includes one claim written to be retracted (c7) together with the prepared \texttt{claim\_retraction} annotation record that retracts it, so the proposal is demonstrated live on the paper that makes it.
 \end{abstract}
 
 \section{Introduction}
@@ -29,7 +44,9 @@ This binary representation has three failures that compound. First, it confuses 
 
 Our contribution is to argue that retraction should be modelled the same way the rrxiv protocol models replication and contradiction: as a typed annotation with a target, a reason category, a scope, and (where relevant) a pointer to the surviving alternative. We audit a 38-paper sample drawn from PubMed retraction notices issued 2020--2024, decompose each into its claim graph using the rrxiv CIR conventions \cite{rrxivwhitepaper}, and ask of each underlying claim whether the retraction notice actually concerns it. The empirical headline (Section~\ref{sec:results}, c2) is that $67\%$ of retracted papers contain at least one claim that the retraction notice does not invalidate. Under the binary regime, those survivor claims are uncitable; under a claim-level retraction model, they remain part of the literature.
 
-Section~\ref{sec:background} surveys what existing infrastructure does and why. Section~\ref{sec:approach} describes the annotation schema and the audit procedure. Section~\ref{sec:results} presents the six registered claims. Section~\ref{sec:discussion} discusses the policy implications --- in particular, what a retraction policy looks like when retractions are first-class graph edges rather than database flags.
+A paper arguing that retraction should be a first-class annotation owes the reader a working example. This revision therefore includes a deliberate one: claim c7 (Section~\ref{sec:demo}) is written to be retracted, and the repository ships the corresponding \texttt{claim\_retraction} annotation record (RRP-0020) that withdraws it in favour of claim c5. The retraction machinery this paper proposes is thereby exercised, end to end, on the paper itself.
+
+Section~\ref{sec:background} surveys what existing infrastructure does and why. Section~\ref{sec:approach} describes the annotation schema and the audit procedure. Section~\ref{sec:results} presents the registered claims, including the live retraction demonstration. Section~\ref{sec:discussion} discusses the policy implications --- in particular, what a retraction policy looks like when retractions are first-class graph edges rather than database flags.
 
 \section{Background}
 \label{sec:background}
@@ -74,23 +91,19 @@ This paper does not address \emph{pre-publication withdrawal} of preprints, whic
 \label{sec:results}
 
 \subsection*{Claim 1: retraction is annotation-shaped}
-\begin{claim}[Claim 1]
+\begin{claim}[type=theoretical, evidence=argument, labels={retraction, metascience}, title=Claim 1]
 \label{claim:c1}
 Retraction is more naturally modelled as an annotation type (with target, reason, scope) than as a paper-level flag.
-
-\emph{Replication status: replicated.}
 \end{claim}
 
 The argument is structural. Replication, erratum, and contradiction are already modelled in the rrxiv protocol as annotations with $\langle \mathit{target}, \mathit{kind}, \mathit{provenance} \rangle$ \cite{rrxivwhitepaper}. Retraction differs from these in social weight, not in shape: it has a target (the assertion being withdrawn), a kind (the reason category), and a provenance (who issued the notice, when, on what authority). Modelling it as a flag rather than an annotation is a representational accident inherited from print conventions, where the only place to put the information was a separate notice in a later issue of the same journal.
 
-Once retraction is shaped like an annotation, two consequences follow mechanically. Notices can target claims rather than papers (Section~\ref{sec:approach}), and notices can carry typed metadata in fields rather than free text, making them queryable. The reviewer who replicated this argument independently observed that the same logic applies to author corrigenda, which are presently encoded as separate documents but are structurally identical to a retraction with reason \texttt{data\_error} and scope restricted to a single claim.
+Once retraction is shaped like an annotation, two consequences follow mechanically. Notices can target claims rather than papers (Section~\ref{sec:approach}), and notices can carry typed metadata in fields rather than free text, making them queryable. The same logic applies to author corrigenda, which are presently encoded as separate documents but are structurally identical to a retraction with reason \texttt{data\_error} and scope restricted to a single claim.
 
 \subsection*{Claim 2: most retracted papers contain survivor claims}
-\begin{claim}[Claim 2]
+\begin{claim}[type=empirical, evidence=observation, labels={retraction, metascience, load-bearing}, datasets={PubMed retraction notices 2020--2024}, title=Claim 2]
 \label{claim:c2}
 67\% of retracted papers in our sample contain at least one claim that survives the retraction; current binary flagging makes those claims uncitable.
-
-\emph{Replication status: untested.}
 \end{claim}
 \dependson{rrxiv:2605.00007:claim:c2}{rrxiv:2605.00007:claim:c1}
 
@@ -99,11 +112,9 @@ Of the 38 papers, 25 contained at least one claim that was neither directly inva
 Under the binary flagging regime, all of these claims become uncitable in practice. A subsequent author who wants to cite the survivor claim must either cite the retracted paper (and accept the retraction stigma) or paraphrase without citation (and lose the chain of attribution). Neither option is good; both reflect the representation, not the underlying epistemic situation. We note as an open question (below) the rate at which authors today resort to either workaround.
 
 \subsection*{Claim 3: structured retraction enables fast impact computation}
-\begin{claim}[Claim 3]
+\begin{claim}[type=computational, evidence=simulation, labels={retraction, metascience}, regimes={synthetic citation graph of 12000 papers and 96000 claims}, title=Claim 3]
 \label{claim:c3}
 Structured retraction annotations let downstream-citation impact be computed automatically with median latency under 6 hours.
-
-\emph{Replication status: untested.}
 \end{claim}
 \dependson{rrxiv:2605.00007:claim:c3}{rrxiv:2605.00007:claim:c1}
 
@@ -112,11 +123,9 @@ We simulated the propagation of structured retractions across a synthetic citati
 With retraction modelled as an annotation against a specific claim, propagation reduces to a graph query: find every annotation that depends, directly or transitively, on the retracted claim, and emit a notification. In our simulation the median end-to-end latency from notice ingestion to downstream-claim update was 4.1 hours, well within the 6-hour threshold. The latency is dominated not by graph traversal (milliseconds at this scale) but by the human-in-the-loop confirmation step we built in to avoid spurious cascades. The relevant comparison is not 4 hours vs.\ 2 years; it is the difference between a process that runs and one that does not.
 
 \subsection*{Claim 4: a five-category vocabulary covers 94\% of historical retractions}
-\begin{claim}[Claim 4]
+\begin{claim}[type=empirical, evidence=observation, labels={retraction, metascience}, datasets={PubMed retraction notices 2010--2024}, title=Claim 4]
 \label{claim:c4}
 The five reason categories (data error, methodological flaw, fraud, contamination, withdrawn by author) cover 94\% of historical retractions in PubMed.
-
-\emph{Replication status: untested.}
 \end{claim}
 
 We hand-coded a stratified sample of 412 PubMed retraction notices from 2010--2024 against the five categories listed in Table~\ref{tab:reasons}. 388 notices, or $94\%$, mapped cleanly to one category. The remaining $6\%$ split between sui-generis cases (e.g.\ retraction following a publisher merger that invalidated the venue's editorial process) and notices that gave no usable reason at all. A coverage rate this high suggests the five-category vocabulary is rich enough for the structured-reason field of the retraction annotation without further extension; it is also small enough that humans can hold it in working memory when triaging notices.
@@ -124,27 +133,32 @@ We hand-coded a stratified sample of 412 PubMed retraction notices from 2010--20
 We did not attempt to subdivide the categories further (e.g.\ distinguishing image manipulation from data fabrication within fraud) because finer subdivisions cost more in annotator disagreement than they gain in expressiveness. The vocabulary should be understood as the top level of a controlled hierarchy; subtypes are appropriate for specialised review workflows but not for the protocol-level annotation.
 
 \subsection*{Claim 5: retracting a claim should not require retracting its paper}
-\begin{claim}[Claim 5]
+\begin{claim}[type=theoretical, evidence=argument, labels={retraction, metascience}, title=Claim 5]
 \label{claim:c5}
 Retracting a claim should not require retracting its paper; this is incompatible with current citation-database conventions.
-
-\emph{Replication status: untested.}
 \end{claim}
 \dependson{rrxiv:2605.00007:claim:c5}{rrxiv:2605.00007:claim:c2}
 \dependson{rrxiv:2605.00007:claim:c5}{rrxiv:2605.00007:claim:c1}
+% Cross-paper edge: the append-only-citation-graph vs revisable-annotation-layer
+% distinction this claim relies on is developed in rrxiv:2605.00006 c4
+% (see Section 2 and the [rrxivannotation] reference note).
+\dependson{rrxiv:2605.00007:claim:c5}{rrxiv:2605.00006:claim:c4}
 
 The current convention treats the paper as the unit of retraction because the paper is the unit of citation. Authors cite \emph{Smith et al.\ 2018}, not \emph{the third result section of Smith et al.\ 2018}. As long as that is the granularity of reference, it is the granularity of retraction. The rrxiv claim graph deliberately undoes this assumption: a citation in this corpus points to a claim, not a paper. Once it does, the retraction follows the citation: it operates at the claim level too. This is incompatible with current databases not because the data cannot fit, but because the downstream tools (impact factors, citation counts, h-indices) all assume the paper is the unit, and a partial retraction is undefined under that assumption.
 
 We expect a transition period in which both representations coexist: a paper carries both a paper-level retraction flag (for legacy consumers) and a set of claim-level retraction annotations (for protocol-aware consumers). The flag is the projection of the annotations down to a single bit; the annotations are recoverable from the flag only by manual reading. This is a one-way information loss, which is why the annotations should be the source of truth and the flag should be derived.
 
 \subsection*{Claim 6: downstream papers retain supersession edges}
-\begin{claim}[Claim 6]
+\begin{claim}[type=theoretical, evidence=argument, labels={retraction, metascience}, title=Claim 6]
 \label{claim:c6}
 Downstream papers should retain the option to register a `superseded\_by` annotation pointing to the survivor claim, preserving the citation chain.
-
-\emph{Replication status: untested.}
 \end{claim}
 \dependson{rrxiv:2605.00007:claim:c6}{rrxiv:2605.00007:claim:c5}
+% Cross-paper edge: the propose-then-confirm discipline for agent-issued
+% retraction machinery established in rrxiv:2605.00005 c6 is generalised here
+% to agent-proposed supersession edges (see the paragraph below and the
+% rrxivremark that follows).
+\extendsclaim{rrxiv:2605.00007:claim:c6}{rrxiv:2605.00005:claim:c6}
 
 When a claim is retracted but a corrected version exists --- in a corrigendum, a successor paper, or a third party's independent replication --- the natural representation is an edge from the retracted claim to its successor. Downstream papers that cited the retracted claim can then attach a \texttt{superseded\_by} annotation that follows the edge, transparently redirecting attribution without rewriting the bibliography. The chain of intellectual lineage is preserved: a future reader can see that paper $A$ cited claim $X$, that $X$ was retracted and superseded by $X'$, and that $A$'s argument is now properly understood as depending on $X'$.
 
@@ -153,6 +167,17 @@ This is the inverse of the current convention, in which a retracted citation is 
 \begin{rrxivremark}[Agents and retraction flags]
 A specific weakness of editor agents identified in \texttt{rrxiv:2605.00005} is that they conflate paper-level retraction flags with claim-level reliability. An agent reading the current literature treats a paper-level flag as wholesale invalidation and consequently refuses to surface survivor claims. Claim-level retraction annotations resolve this by giving the agent a fine-grained signal: a paper can have one retracted claim and twenty live ones, and the agent should treat them differently.
 \end{rrxivremark}
+
+\subsection*{Claim 7: a live retraction demonstration}
+\label{sec:demo}
+
+\begin{claim}[type=theoretical, evidence=argument, confidence=0.05, rationale={Included as a live retraction demonstration; withdrawn by the prepared claim-retraction annotation record in the paper repository}, labels={retraction, metascience, demo-retraction}, title=Claim 7 (retracted by design)]
+\label{claim:c7}
+A paper-level retraction flag is an adequate substitute for claim-level retraction annotations: projecting the annotations down to a single paper-level bit loses nothing a downstream consumer needs.
+\end{claim}
+\contradicts{rrxiv:2605.00007:claim:c7}{rrxiv:2605.00007:claim:c5}
+
+\emph{This claim is intentionally retracted-as-demonstration; see the annotation record.} A paper whose thesis is that retraction should be a first-class, claim-scoped annotation ought to exercise that machinery at least once, on itself. Claim c7 states the status-quo position this paper argues against --- Section~\ref{sec:results} (c5) shows the projection from claim-level annotations to a paper-level bit is a one-way information loss --- and exists precisely so that it can be withdrawn through the sanctioned author fast path of RRP-0020. The paper repository ships the prepared annotation record at \texttt{annotations/claim-retraction.demo.json}: a \texttt{claim\_retraction} annotation targeting c7 with reason \texttt{withdrawn\_by\_author}, \texttt{superseded\_by\_claim} pointing at c5, and \texttt{recommended\_action: use\_superseded\_by}. Once posted to the canonical instance by the paper's authors, the server derives c7's \texttt{replication\_status} as \texttt{retracted} while c1--c6 remain live --- a one-claim, in-vivo instance of the survivor-claim situation that claim c2 measures in the wild. Readers encountering c7 through a protocol-aware client should see the retraction banner, the reason, and the pointer to c5; readers of this PDF see this paragraph. That asymmetry is the paper's argument in miniature.
 
 \begin{openquestion}[Author-initiated vs.\ third-party retraction]
 This paper assumes the retraction notice has a well-identified author --- the original authors, an editor, or a publication-ethics body. Independent third-party retractions (e.g.\ a post-publication audit identifying a fabricated figure) are increasingly common and do not fit cleanly into the COPE workflow. Whether such third-party retractions should be represented as retraction annotations, or as a distinct annotation type with its own social weight, is left open.
